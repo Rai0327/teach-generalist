@@ -34,6 +34,7 @@ class Args:
     task_suite_name: str = (
         "libero_spatial"  # Task suite. Options: libero_spatial, libero_object, libero_goal, libero_10, libero_90
     )
+    task_id: int | None = None  # Specific task ID to evaluate (0-9 for libero_spatial). If None, evaluates all tasks.
     num_steps_wait: int = 10  # Number of steps to wait for objects to stabilize i n sim
     num_trials_per_task: int = 50  # Number of rollouts per task
 
@@ -72,14 +73,24 @@ def eval_libero(args: Args) -> None:
 
     client = _websocket_client_policy.WebsocketClientPolicy(args.host, args.port)
 
+    # Determine which tasks to evaluate
+    if args.task_id is not None:
+        if args.task_id < 0 or args.task_id >= num_tasks_in_suite:
+            raise ValueError(f"task_id must be between 0 and {num_tasks_in_suite - 1}, got {args.task_id}")
+        task_ids = [args.task_id]
+        logging.info(f"Evaluating single task: {args.task_id}")
+    else:
+        task_ids = list(range(num_tasks_in_suite))
+        logging.info(f"Evaluating all {num_tasks_in_suite} tasks")
+
     # Start evaluation
     total_episodes, total_successes = 0, 0
-    for task_id in tqdm.tqdm(range(num_tasks_in_suite)):
+    for task_id in tqdm.tqdm(task_ids):
         # Get task
         task = task_suite.get_task(task_id)
 
         # Get default LIBERO initial states
-        initial_states = task_suite.get_task_init_states(task_id)
+        # initial_states = task_suite.get_task_init_states(task_id)
 
         # Initialize LIBERO environment and task description
         env, task_description = _get_libero_env(task, LIBERO_ENV_RESOLUTION, args.seed)
@@ -90,11 +101,11 @@ def eval_libero(args: Args) -> None:
             logging.info(f"\nTask: {task_description}")
 
             # Reset environment
-            env.reset()
+            # env.reset()
             action_plan = collections.deque()
 
             # Set initial states
-            obs = env.set_init_state(initial_states[episode_idx])
+            obs = env.reset()
 
             # Setup
             t = 0
