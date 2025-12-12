@@ -1,0 +1,1 @@
+This repo is based off of the openpi repo. Our primary contributions can be found in `scripts/train_dagger.py`, `scripts/train_bc.py`, `scripts/eval_bc.py`, `scripts/convert_jax_to_pytorch.py`, `utils/`, and `models/`.
